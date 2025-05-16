@@ -1,6 +1,6 @@
 # Yoga Pose Coach 🧘♀️✨
 
-Real-time AI-powered yoga pose classification and feedback system using:
+Real-time yoga pose classification and feedback system using:
 - MediaPipe for pose estimation
 - TensorFlow/Keras for pose classification
 - OpenCV for video processing
