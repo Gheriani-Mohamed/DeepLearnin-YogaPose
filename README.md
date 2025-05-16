@@ -7,6 +7,13 @@ Real-time yoga pose classification and feedback system using:
 
 ![image](https://github.com/user-attachments/assets/24c54ae0-9ae0-4b6d-9b70-bf70bb9e167e)
 
+
+https://github.com/user-attachments/assets/2336b7b0-bed2-45cb-9c54-8b786dae9d80
+
+
+
+
+
 ## Features
 - **Real-time feedback** on 4 yoga poses:
   - Goddess Pose 
