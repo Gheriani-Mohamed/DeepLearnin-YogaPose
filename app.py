@@ -23,6 +23,16 @@ from detection.pose_detector import mp
 from detection.pose_detector import YogaPoseCoach
 import numpy as np
 import cv2
+import numpy as np
+import pandas as pd
+import pickle
+from tqdm import tqdm
+import mediapipe as mp
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from sklearn.model_selection import train_test_split
 
 app = Flask(__name__)
 login_manager = LoginManager()
