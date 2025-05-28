@@ -166,13 +166,13 @@ class YogaPoseCoach:
 
 def main():
     """Legacy entry point for standalone testing."""
-    coach = YogaPoseCoach(model_path='../Model/best_model.h5', mapping_path='../Model/class_mapping.pkl')
+    coach = YogaPoseCoach(model_path='./Model/best_model.h5', mapping_path='./Model/class_mapping.pkl')
     coach.run_camera()
 
 
 def gen_pose_frames():
     """Generator for Flask video streaming."""
-    coach = YogaPoseCoach(model_path='../Model/best_model.h5', mapping_path='../Model/class_mapping.pkl')
+    coach = YogaPoseCoach(model_path='./Model/best_model.h5', mapping_path='./Model/class_mapping.pkl')
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
