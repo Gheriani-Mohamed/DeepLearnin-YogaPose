@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block content %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const poseSection = document.getElementById('pose-section');
+        const positionSelect = document.getElementById('position-select');
+        const positionImage = document.getElementById('position-image');
+        const positionPurpose = document.getElementById('position-purpose');
+        const startButton = document.getElementById('start-button');
+        const openCameraButton = document.getElementById('open-camera-button');
+        const positionSteps = document.getElementById('position-steps');
+        const cameraSection = document.getElementById('camera-section');
+        const closeCameraButton = document.getElementById('close-camera-button');
+        const fileInsertion = document.getElementById('file-insertion');
+        const cameraLoading = document.getElementById('camera-loading');
+        const cameraFeed = document.getElementById('camera-feed');
+        const positions = JSON.parse('{{ positions | tojson | safe }}');
+        const poseInfo = JSON.parse('{{ pose_info | tojson | safe }}');
+        const fileInput = document.getElementById('pose-image-upload');
+        const resultDiv = document.getElementById('compare-result');
+        let stream = null;
+
+        poseSection.classList.add('flex');
+        cameraSection.classList.add('hidden');
+        fileInput.value = '';
+        positionSelect.value = '';
+
+        // Update image and description based on the selected position
+        positionSelect.addEventListener('change', function () {
+            const selectedPosition = this.value;
+            if (selectedPosition && positions[selectedPosition]) {
+                positionImage.src = `/static/poses/${positions[selectedPosition].image}`;
+                positionPurpose.textContent = positions[selectedPosition].purpose;
+                positionSteps.innerHTML = '';
+                if (positions[selectedPosition].steps && positions[selectedPosition].steps.length > 0) {
+                    positions[selectedPosition].steps.forEach(function (step) {
+                        const li = document.createElement('li');
+                        li.textContent = step;
+                        positionSteps.appendChild(li);
+                    });
+                } else {
+                    positionSteps.innerHTML = '<li>No steps available for this position.</li>';
+                }
+            } else {
+                positionImage.src = '/static/Yoga_splash.png';
+                positionSteps.innerHTML = '<li>Select a position to see the steps.</li>';
+            }
+        });
+
+        // Handle start button click
+        startButton.addEventListener('click', function () {
+            alert('Starting the yoga session!');
+        });
+
+        openCameraButton.addEventListener('click', function () {
+            poseSection.style.display = 'none';
+            cameraSection.style.display = 'flex';
+            cameraLoading.classList.remove('hidden');
+            cameraFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime(); // prevent caching
+        });
+
+        cameraFeed.addEventListener('load', function () {
+            cameraLoading.classList.add('hidden');
+        });
+
+        closeCameraButton.addEventListener('click', function () {
+            cameraSection.style.display = 'none';
+            poseSection.style.display = 'flex';
+            cameraFeed.src = ""; // Stop the video feed
+        });
+
+        const thumbsUpSVG = `
+            <svg height="200px" width="100px" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32" xml:space="preserve" fill="#96c893" stroke="#96c893">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g id="check_x5F_alt"> <path style="fill:#fff;" d="M16,0C7.164,0,0,7.164,0,16s7.164,16,16,16s16-7.164,16-16S24.836,0,16,0z M13.52,23.383 L6.158,16.02l2.828-2.828l4.533,4.535l9.617-9.617l2.828,2.828L13.52,23.383z">
+            </path> </g> </g> </g>
+            </svg>
+        `;
+
+        // Handle file input change to change the right section image to the selected image
+        fileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    positionImage.src = e.target.result;
+                    positionPurpose.textContent = "Image uploaded successfully";
+                    positionSteps.innerHTML = thumbsUpSVG;
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                positionImage.src = '/static/Yoga_splash.png';
+                positionPurpose.textContent = "Select a position";
+                positionSteps.innerHTML = '<li>Select a position to see the steps.</li>';
+            }
+        });
+
+        document.getElementById('compare-pose-btn').addEventListener('click', function () {
+            if (!fileInput.files.length) {
+                resultDiv.textContent = "Please select an image.";
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            fetch('/compare_pose', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        resultDiv.textContent = data.error;
+                    } else {
+                        resultDiv.textContent = `Best match: ${data.pose} (${data.accuracy}% accuracy)`;
+                    }
+                });
+        });
+    });
+</script>
+<div class="flex flex-col items-center justify-center gap-5">
+    <!-- position dropdown selection -->
+    <div class="flex flex-col items-center space-y-4">
+        <label for="position-select" class="text-lg text-gray-700 mb-2">
+            Select your yoga position to get started
+        </label>
+        <select id="position-select"
+                class="w-full max-w-xs p-2 text-gray-800 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            <option value="" disabled selected>Select a position</option>
+            {% for position in positions %}
+            <option value="{{ position }}">{{ positions[position].name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="flex items-center justify-center gap-10">
+        <!-- Camera section -->
+        <div id="camera-section"
+             class="rounded-lg p-8 border border-gray-300 shadow-md bg-white/10 w-[500px] h-[500px] hidden flex-col items-center justify-center">
+            <div id="camera-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 z-10 hidden">
+                <div class="loader border-4 border-green-500 border-t-transparent rounded-full w-16 h-16 animate-spin"></div>
+            </div>
+            <img id="camera-feed" src="" width="480" height="360" alt="feed"/>
+            <button id="close-camera-button"
+                    class="mt-4 px-6 py-2 bg-red-700 text-white font-medium rounded-full shadow-md  hover:bg-red-800 focus:outline-none">
+                Close Camera
+            </button>
+        </div>
+        <!-- Pose section -->
+        <div id="pose-section"
+             class="rounded-lg p-8 border border-gray-300 shadow-md bg-white/10 w-[500px] h-[500px] flex flex-col items-center justify-between">
+            {% if pose_info %}
+            <p id="position-purpose" class="p-2 text-center font-semibold">Select a position</p>
+            <ol id="position-steps" class="list-decimal list-inside text-gray-700 mb-4">
+            </ol>
+            {% endif %}
+            <div class="w-full flex flex-col gap-5">
+                <div id="file-insertion"
+                     class="flex justify-center items-center justify-center w-full p-2 bg-gray-50/10 rounded-2xl border border-gray-300 border-dashed overflow-hidden">
+                    <input
+                            class="w-full py-5 px-1 text-gray-800 bg-white/10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+                            type="file"
+                            id="pose-image-upload"
+                            accept="image/*"/>
+                    <button id="compare-pose-btn" class="px-4 py-2 bg-green-600 text-white rounded">
+                        Compare Pose
+                    </button>
+                </div>
+                <div id="compare-result" class="text-green-700 font-bold text-center"></div>
+                <button
+                        id="open-camera-button"
+                        class="w-full px-6 py-2 bg-green-700 text-white font-medium rounded-full shadow-md hover:bg-green-800 focus:outline-none"
+                >
+                    Open Camera
+                </button>
+            </div>
+        </div>
+        <!-- position image section -->
+        <div class="flex flex-col items-center space-y-4 mt-8">
+            <img id="position-image" src="{{ url_for('static', filename='Yoga_splash.png') }}"
+                 alt="Yoga Position" class="w-[500px] h-[400px] object-center rounded-lg">
+            <button id="start-button"
+                    class="mt-4 px-6 py-2 bg-green-700 text-white font-medium rounded-full shadow-md hover:bg-green-800"
+            >
+                Start
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
